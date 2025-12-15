@@ -42,9 +42,8 @@ func (r *StudentRepository) FindByStudentNumber(studentNumber string) (*model.St
 	return &student, nil
 }
 
-func (r *StudentRepository) FindAll(query dto.StudentQuery) ([]model.Student, int64, error) {
+func (r *StudentRepository) FindAll(query dto.StudentQuery) ([]model.Student, error) {
 	var students []model.Student
-	var total int64
 
 	db := r.db.Model(&model.Student{})
 
@@ -59,12 +58,9 @@ func (r *StudentRepository) FindAll(query dto.StudentQuery) ([]model.Student, in
 		db = db.Where("room_number = ?", query.Room)
 	}
 
-	db.Count(&total)
+	err := db.Order("student_number").Find(&students).Error
 
-	offset := (query.Page - 1) * query.Limit
-	err := db.Offset(offset).Limit(query.Limit).Order("student_number").Find(&students).Error
-
-	return students, total, err
+	return students, err
 }
 
 func (r *StudentRepository) Update(student *model.Student) error {

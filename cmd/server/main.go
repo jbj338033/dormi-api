@@ -49,6 +49,7 @@ func main() {
 	pointRepo := repository.NewPointRepository(db)
 	pointReasonRepo := repository.NewPointReasonRepository(db)
 	dutyRepo := repository.NewDutyRepository(db)
+	dutySwapRepo := repository.NewDutySwapRequestRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 
 	authService := service.NewAuthService(userRepo, cfg)
@@ -57,13 +58,14 @@ func main() {
 	pointReasonService := service.NewPointReasonService(pointReasonRepo)
 	pointService := service.NewPointService(pointRepo, studentRepo, pointReasonRepo)
 	dutyService := service.NewDutyService(dutyRepo)
+	dutySwapService := service.NewDutySwapRequestService(dutySwapRepo, dutyRepo)
 	auditService := service.NewAuditService(auditRepo)
 
 	authHandler := handler.NewAuthHandler(authService, auditService)
 	studentHandler := handler.NewStudentHandler(studentService, auditService)
 	pointReasonHandler := handler.NewPointReasonHandler(pointReasonService, auditService)
 	pointHandler := handler.NewPointHandler(pointService, auditService)
-	dutyHandler := handler.NewDutyHandler(dutyService, auditService)
+	dutyHandler := handler.NewDutyHandler(dutyService, dutySwapService, auditService)
 	auditHandler := handler.NewAuditHandler(auditService)
 
 	r := gin.Default()
@@ -129,8 +131,15 @@ func main() {
 			duties.PUT("/:id", middleware.RequireAdminOrSupervisor(), dutyHandler.Update)
 			duties.DELETE("/:id", middleware.RequireAdminOrSupervisor(), dutyHandler.Delete)
 			duties.POST("/generate", middleware.RequireAdminOrSupervisor(), dutyHandler.Generate)
-			duties.POST("/:id/swap", dutyHandler.Swap)
-			duties.PATCH("/:id/complete", middleware.RequireAdminOrSupervisor(), dutyHandler.Complete)
+			duties.POST("/:id/swap-requests", dutyHandler.CreateSwapRequest)
+		}
+
+		dutySwapRequests := api.Group("/duty-swap-requests")
+		{
+			dutySwapRequests.GET("/pending", dutyHandler.GetPendingSwapRequests)
+			dutySwapRequests.GET("/my", dutyHandler.GetMySwapRequests)
+			dutySwapRequests.PATCH("/:id/approve", dutyHandler.ApproveSwapRequest)
+			dutySwapRequests.PATCH("/:id/reject", dutyHandler.RejectSwapRequest)
 		}
 
 		api.GET("/audit-logs", middleware.RequireAdmin(), auditHandler.GetAll)

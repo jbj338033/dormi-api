@@ -48,8 +48,6 @@ type StudentQuery struct {
 	Search string `form:"search"`
 	Grade  int    `form:"grade"`
 	Room   string `form:"room"`
-	Page   int    `form:"page,default=1"`
-	Limit  int    `form:"limit,default=20"`
 }
 
 type GivePointRequest struct {
@@ -79,8 +77,6 @@ type PointQuery struct {
 	Type      string    `form:"type"`
 	StartDate string    `form:"startDate"`
 	EndDate   string    `form:"endDate"`
-	Page      int       `form:"page,default=1"`
-	Limit     int       `form:"limit,default=20"`
 }
 
 type CreateDutyRequest struct {
@@ -105,7 +101,7 @@ type GenerateDutyRequest struct {
 	Floor       *int        `json:"floor"`
 }
 
-type SwapDutyRequest struct {
+type CreateDutySwapRequest struct {
 	TargetDutyID uuid.UUID `json:"targetDutyId" binding:"required"`
 }
 
@@ -114,8 +110,6 @@ type DutyQuery struct {
 	AssigneeID uuid.UUID `form:"assigneeId"`
 	StartDate  string    `form:"startDate"`
 	EndDate    string    `form:"endDate"`
-	Page       int       `form:"page,default=1"`
-	Limit      int       `form:"limit,default=20"`
 }
 
 type AuditQuery struct {

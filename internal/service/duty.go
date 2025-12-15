@@ -59,13 +59,7 @@ func (s *DutyService) GetByID(id uuid.UUID) (*model.Duty, error) {
 	return s.dutyRepo.FindByID(id)
 }
 
-func (s *DutyService) GetAll(query dto.DutyQuery) ([]model.Duty, int64, error) {
-	if query.Page < 1 {
-		query.Page = 1
-	}
-	if query.Limit < 1 || query.Limit > 100 {
-		query.Limit = 20
-	}
+func (s *DutyService) GetAll(query dto.DutyQuery) ([]model.Duty, error) {
 	return s.dutyRepo.FindAll(query)
 }
 
@@ -155,21 +149,7 @@ func (s *DutyService) Generate(req dto.GenerateDutyRequest) ([]model.Duty, error
 	return duties, nil
 }
 
-func (s *DutyService) Swap(id uuid.UUID, targetID uuid.UUID) error {
-	duty1, err := s.dutyRepo.FindByID(id)
-	if err != nil {
-		return errors.New("duty not found")
-	}
-
-	duty2, err := s.dutyRepo.FindByID(targetID)
-	if err != nil {
-		return errors.New("target duty not found")
-	}
-
-	if duty1.Type != duty2.Type {
-		return errors.New("can only swap duties of the same type")
-	}
-
+func (s *DutyService) SwapAssignees(duty1, duty2 *model.Duty) error {
 	duty1.AssigneeID, duty2.AssigneeID = duty2.AssigneeID, duty1.AssigneeID
 
 	if err := s.dutyRepo.Update(duty1); err != nil {
@@ -182,12 +162,129 @@ func (s *DutyService) Swap(id uuid.UUID, targetID uuid.UUID) error {
 	return nil
 }
 
-func (s *DutyService) Complete(id uuid.UUID) error {
-	duty, err := s.dutyRepo.FindByID(id)
+type DutySwapRequestService struct {
+	swapRepo *repository.DutySwapRequestRepository
+	dutyRepo *repository.DutyRepository
+}
+
+func NewDutySwapRequestService(swapRepo *repository.DutySwapRequestRepository, dutyRepo *repository.DutyRepository) *DutySwapRequestService {
+	return &DutySwapRequestService{swapRepo: swapRepo, dutyRepo: dutyRepo}
+}
+
+func (s *DutySwapRequestService) Create(requesterID, sourceDutyID, targetDutyID uuid.UUID) (*model.DutySwapRequest, error) {
+	sourceDuty, err := s.dutyRepo.FindByID(sourceDutyID)
 	if err != nil {
-		return errors.New("duty not found")
+		return nil, errors.New("source duty not found")
 	}
 
-	duty.Completed = true
-	return s.dutyRepo.Update(duty)
+	if sourceDuty.AssigneeID != requesterID {
+		return nil, errors.New("you can only request swap for your own duty")
+	}
+
+	targetDuty, err := s.dutyRepo.FindByID(targetDutyID)
+	if err != nil {
+		return nil, errors.New("target duty not found")
+	}
+
+	if sourceDuty.Type != targetDuty.Type {
+		return nil, errors.New("can only swap duties of the same type")
+	}
+
+	if sourceDuty.AssigneeID == targetDuty.AssigneeID {
+		return nil, errors.New("cannot swap with your own duty")
+	}
+
+	exists, err := s.swapRepo.ExistsPendingBetweenDuties(sourceDutyID, targetDutyID)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, errors.New("swap request already exists")
+	}
+
+	req := &model.DutySwapRequest{
+		RequesterID:  requesterID,
+		SourceDutyID: sourceDutyID,
+		TargetDutyID: targetDutyID,
+		Status:       model.DutySwapStatusPending,
+	}
+
+	if err := s.swapRepo.Create(req); err != nil {
+		return nil, err
+	}
+
+	return s.swapRepo.FindByID(req.ID)
+}
+
+func (s *DutySwapRequestService) GetByID(id uuid.UUID) (*model.DutySwapRequest, error) {
+	return s.swapRepo.FindByID(id)
+}
+
+func (s *DutySwapRequestService) GetPendingForUser(userID uuid.UUID) ([]model.DutySwapRequest, error) {
+	return s.swapRepo.FindPendingByTargetAssignee(userID)
+}
+
+func (s *DutySwapRequestService) GetMyRequests(userID uuid.UUID) ([]model.DutySwapRequest, error) {
+	return s.swapRepo.FindByRequester(userID)
+}
+
+func (s *DutySwapRequestService) Approve(id, approverID uuid.UUID) error {
+	req, err := s.swapRepo.FindByID(id)
+	if err != nil {
+		return errors.New("swap request not found")
+	}
+
+	if req.Status != model.DutySwapStatusPending {
+		return errors.New("swap request is not pending")
+	}
+
+	sourceDuty, err := s.dutyRepo.FindByID(req.SourceDutyID)
+	if err != nil {
+		return errors.New("source duty not found")
+	}
+
+	targetDuty, err := s.dutyRepo.FindByID(req.TargetDutyID)
+	if err != nil {
+		return errors.New("target duty not found")
+	}
+
+	if targetDuty.AssigneeID != approverID {
+		return errors.New("only target duty assignee can approve")
+	}
+
+	sourceAssignee := sourceDuty.AssigneeID
+	targetAssignee := targetDuty.AssigneeID
+
+	if err := s.dutyRepo.UpdateAssignee(sourceDuty.ID, targetAssignee); err != nil {
+		return err
+	}
+	if err := s.dutyRepo.UpdateAssignee(targetDuty.ID, sourceAssignee); err != nil {
+		return err
+	}
+
+	req.Status = model.DutySwapStatusApproved
+	return s.swapRepo.Update(req)
+}
+
+func (s *DutySwapRequestService) Reject(id, rejecterID uuid.UUID) error {
+	req, err := s.swapRepo.FindByID(id)
+	if err != nil {
+		return errors.New("swap request not found")
+	}
+
+	if req.Status != model.DutySwapStatusPending {
+		return errors.New("swap request is not pending")
+	}
+
+	targetDuty, err := s.dutyRepo.FindByID(req.TargetDutyID)
+	if err != nil {
+		return errors.New("target duty not found")
+	}
+
+	if targetDuty.AssigneeID != rejecterID {
+		return errors.New("only target duty assignee can reject")
+	}
+
+	req.Status = model.DutySwapStatusRejected
+	return s.swapRepo.Update(req)
 }

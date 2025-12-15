@@ -76,8 +76,16 @@ type DutyResponse struct {
 	Date      string        `json:"date"`
 	Floor     *int          `json:"floor,omitempty"`
 	Assignee  *UserResponse `json:"assignee,omitempty"`
-	Completed bool          `json:"completed"`
 	CreatedAt time.Time     `json:"createdAt"`
+}
+
+type DutySwapRequestResponse struct {
+	ID         uuid.UUID     `json:"id"`
+	Requester  *UserResponse `json:"requester,omitempty"`
+	SourceDuty *DutyResponse `json:"sourceDuty,omitempty"`
+	TargetDuty *DutyResponse `json:"targetDuty,omitempty"`
+	Status     string        `json:"status"`
+	CreatedAt  time.Time     `json:"createdAt"`
 }
 
 type AuditLogResponse struct {

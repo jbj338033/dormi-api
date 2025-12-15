@@ -35,9 +35,8 @@ func (r *PointRepository) FindByID(id uuid.UUID) (*model.Point, error) {
 	return &point, nil
 }
 
-func (r *PointRepository) FindAll(query dto.PointQuery) ([]model.Point, int64, error) {
+func (r *PointRepository) FindAll(query dto.PointQuery) ([]model.Point, error) {
 	var points []model.Point
-	var total int64
 
 	db := r.db.Model(&model.Point{}).Preload("Student").Preload("Reason").Preload("GivenByUser")
 
@@ -55,12 +54,9 @@ func (r *PointRepository) FindAll(query dto.PointQuery) ([]model.Point, int64, e
 		db = db.Where("given_at <= ?", query.EndDate)
 	}
 
-	db.Count(&total)
+	err := db.Order("given_at DESC").Find(&points).Error
 
-	offset := (query.Page - 1) * query.Limit
-	err := db.Offset(offset).Limit(query.Limit).Order("given_at DESC").Find(&points).Error
-
-	return points, total, err
+	return points, err
 }
 
 func (r *PointRepository) FindByStudentID(studentID uuid.UUID) ([]model.Point, error) {

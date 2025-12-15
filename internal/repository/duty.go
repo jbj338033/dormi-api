@@ -35,9 +35,8 @@ func (r *DutyRepository) FindByID(id uuid.UUID) (*model.Duty, error) {
 	return &duty, nil
 }
 
-func (r *DutyRepository) FindAll(query dto.DutyQuery) ([]model.Duty, int64, error) {
+func (r *DutyRepository) FindAll(query dto.DutyQuery) ([]model.Duty, error) {
 	var duties []model.Duty
-	var total int64
 
 	db := r.db.Model(&model.Duty{}).Preload("Assignee")
 
@@ -56,16 +55,17 @@ func (r *DutyRepository) FindAll(query dto.DutyQuery) ([]model.Duty, int64, erro
 		db = db.Where("date <= ?", endDate)
 	}
 
-	db.Count(&total)
+	err := db.Order("date").Find(&duties).Error
 
-	offset := (query.Page - 1) * query.Limit
-	err := db.Offset(offset).Limit(query.Limit).Order("date").Find(&duties).Error
-
-	return duties, total, err
+	return duties, err
 }
 
 func (r *DutyRepository) Update(duty *model.Duty) error {
 	return r.db.Save(duty).Error
+}
+
+func (r *DutyRepository) UpdateAssignee(id, assigneeID uuid.UUID) error {
+	return r.db.Model(&model.Duty{}).Where("id = ?", id).Update("assignee_id", assigneeID).Error
 }
 
 func (r *DutyRepository) Delete(id uuid.UUID) error {
@@ -79,5 +79,67 @@ func (r *DutyRepository) ExistsByDateAndType(date time.Time, dutyType model.Duty
 		db = db.Where("floor = ?", *floor)
 	}
 	err := db.Count(&count).Error
+	return count > 0, err
+}
+
+type DutySwapRequestRepository struct {
+	db *gorm.DB
+}
+
+func NewDutySwapRequestRepository(db *gorm.DB) *DutySwapRequestRepository {
+	return &DutySwapRequestRepository{db: db}
+}
+
+func (r *DutySwapRequestRepository) Create(req *model.DutySwapRequest) error {
+	return r.db.Create(req).Error
+}
+
+func (r *DutySwapRequestRepository) FindByID(id uuid.UUID) (*model.DutySwapRequest, error) {
+	var req model.DutySwapRequest
+	err := r.db.Preload("Requester").Preload("SourceDuty").Preload("SourceDuty.Assignee").Preload("TargetDuty").Preload("TargetDuty.Assignee").First(&req, "id = ?", id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &req, nil
+}
+
+func (r *DutySwapRequestRepository) FindPendingByTargetAssignee(assigneeID uuid.UUID) ([]model.DutySwapRequest, error) {
+	var requests []model.DutySwapRequest
+	err := r.db.
+		Preload("Requester").
+		Preload("SourceDuty").
+		Preload("SourceDuty.Assignee").
+		Preload("TargetDuty").
+		Preload("TargetDuty.Assignee").
+		Joins("JOIN duties ON duties.id = duty_swap_requests.target_duty_id").
+		Where("duties.assignee_id = ? AND duty_swap_requests.status = ?", assigneeID, model.DutySwapStatusPending).
+		Order("duty_swap_requests.created_at DESC").
+		Find(&requests).Error
+	return requests, err
+}
+
+func (r *DutySwapRequestRepository) FindByRequester(requesterID uuid.UUID) ([]model.DutySwapRequest, error) {
+	var requests []model.DutySwapRequest
+	err := r.db.
+		Preload("Requester").
+		Preload("SourceDuty").
+		Preload("SourceDuty.Assignee").
+		Preload("TargetDuty").
+		Preload("TargetDuty.Assignee").
+		Where("requester_id = ?", requesterID).
+		Order("created_at DESC").
+		Find(&requests).Error
+	return requests, err
+}
+
+func (r *DutySwapRequestRepository) Update(req *model.DutySwapRequest) error {
+	return r.db.Save(req).Error
+}
+
+func (r *DutySwapRequestRepository) ExistsPendingBetweenDuties(sourceDutyID, targetDutyID uuid.UUID) (bool, error) {
+	var count int64
+	err := r.db.Model(&model.DutySwapRequest{}).
+		Where("source_duty_id = ? AND target_duty_id = ? AND status = ?", sourceDutyID, targetDutyID, model.DutySwapStatusPending).
+		Count(&count).Error
 	return count > 0, err
 }

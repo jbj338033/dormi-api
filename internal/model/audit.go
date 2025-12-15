@@ -10,15 +10,16 @@ import (
 type AuditAction string
 
 const (
-	AuditActionCreate       AuditAction = "CREATE"
-	AuditActionUpdate       AuditAction = "UPDATE"
-	AuditActionDelete       AuditAction = "DELETE"
-	AuditActionLogin        AuditAction = "LOGIN"
-	AuditActionGivePoint    AuditAction = "GIVE_POINT"
-	AuditActionCancelPoint  AuditAction = "CANCEL_POINT"
-	AuditActionResetPoints  AuditAction = "RESET_POINTS"
-	AuditActionSwapDuty     AuditAction = "SWAP_DUTY"
-	AuditActionCompleteDuty AuditAction = "COMPLETE_DUTY"
+	AuditActionCreate              AuditAction = "CREATE"
+	AuditActionUpdate              AuditAction = "UPDATE"
+	AuditActionDelete              AuditAction = "DELETE"
+	AuditActionLogin               AuditAction = "LOGIN"
+	AuditActionGivePoint           AuditAction = "GIVE_POINT"
+	AuditActionCancelPoint         AuditAction = "CANCEL_POINT"
+	AuditActionResetPoints         AuditAction = "RESET_POINTS"
+	AuditActionRequestDutySwap     AuditAction = "REQUEST_DUTY_SWAP"
+	AuditActionApproveDutySwap     AuditAction = "APPROVE_DUTY_SWAP"
+	AuditActionRejectDutySwap      AuditAction = "REJECT_DUTY_SWAP"
 )
 
 type AuditLog struct {

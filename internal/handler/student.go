@@ -105,9 +105,7 @@ func (h *StudentHandler) GetByID(c *gin.Context) {
 // @Param search query string false "검색어 (이름, 학번)"
 // @Param grade query int false "학년"
 // @Param room query string false "방 번호"
-// @Param page query int false "페이지" default(1)
-// @Param limit query int false "페이지당 개수" default(20)
-// @Success 200 {object} dto.PaginatedResponse{data=[]dto.StudentResponse}
+// @Success 200 {object} dto.Response{data=[]dto.StudentResponse}
 // @Failure 400 {object} dto.Response
 // @Router /students [get]
 func (h *StudentHandler) GetAll(c *gin.Context) {
@@ -120,7 +118,7 @@ func (h *StudentHandler) GetAll(c *gin.Context) {
 		return
 	}
 
-	students, total, err := h.studentService.GetAll(query)
+	students, err := h.studentService.GetAll(query)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.Response{
 			Success: false,
@@ -134,20 +132,9 @@ func (h *StudentHandler) GetAll(c *gin.Context) {
 		responses = append(responses, toStudentResponse(&s))
 	}
 
-	totalPages := int(total) / query.Limit
-	if int(total)%query.Limit > 0 {
-		totalPages++
-	}
-
-	c.JSON(http.StatusOK, dto.PaginatedResponse{
+	c.JSON(http.StatusOK, dto.Response{
 		Success: true,
 		Data:    responses,
-		Meta: &dto.Pagination{
-			Page:       query.Page,
-			Limit:      query.Limit,
-			Total:      total,
-			TotalPages: totalPages,
-		},
 	})
 }
 

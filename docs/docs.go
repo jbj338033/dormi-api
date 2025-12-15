@@ -255,20 +255,6 @@ const docTemplate = `{
                         "description": "종료일 (YYYY-MM-DD)",
                         "name": "endDate",
                         "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "페이지",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 20,
-                        "description": "페이지당 개수",
-                        "name": "limit",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -277,7 +263,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/dto.PaginatedResponse"
+                                    "$ref": "#/definitions/dto.Response"
                                 },
                                 {
                                     "type": "object",
@@ -575,25 +561,169 @@ const docTemplate = `{
                 }
             }
         },
-        "/duties/{id}/complete": {
+        "/duties/{id}/swap-requests": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "다른 사람의 당직과 교대 신청",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "당직 교대"
+                ],
+                "summary": "당직 교대 신청",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "내 당직 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "교대 대상 당직 ID",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateDutySwapRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.DutySwapRequestResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/duty-swap-requests/my": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "내가 신청한 교대 목록 조회",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "당직 교대"
+                ],
+                "summary": "내가 신청한 교대 목록",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/dto.DutySwapRequestResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/duty-swap-requests/pending": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "나에게 온 대기 중인 교대 신청 목록 조회",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "당직 교대"
+                ],
+                "summary": "받은 교대 신청 목록",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/dto.DutySwapRequestResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/duty-swap-requests/{id}/approve": {
             "patch": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "당직을 완료 상태로 변경",
+                "description": "받은 교대 신청 승인",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "당직"
+                    "당직 교대"
                 ],
-                "summary": "당직 완료 처리",
+                "summary": "교대 신청 승인",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "당직 ID",
+                        "description": "교대 신청 ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -615,40 +745,28 @@ const docTemplate = `{
                 }
             }
         },
-        "/duties/{id}/swap": {
-            "post": {
+        "/duty-swap-requests/{id}/reject": {
+            "patch": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "두 당직의 담당자 교대",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "받은 교대 신청 거절",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "당직"
+                    "당직 교대"
                 ],
-                "summary": "당직 교대",
+                "summary": "교대 신청 거절",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "당직 ID",
+                        "description": "교대 신청 ID",
                         "name": "id",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "description": "교대 대상 당직 ID",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.SwapDutyRequest"
-                        }
                     }
                 ],
                 "responses": {
@@ -961,20 +1079,6 @@ const docTemplate = `{
                         "description": "종료일 (YYYY-MM-DD)",
                         "name": "endDate",
                         "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "페이지",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 20,
-                        "description": "페이지당 개수",
-                        "name": "limit",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -983,7 +1087,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/dto.PaginatedResponse"
+                                    "$ref": "#/definitions/dto.Response"
                                 },
                                 {
                                     "type": "object",
@@ -1334,20 +1438,6 @@ const docTemplate = `{
                         "description": "방 번호",
                         "name": "room",
                         "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "페이지",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 20,
-                        "description": "페이지당 개수",
-                        "name": "limit",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1356,7 +1446,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/dto.PaginatedResponse"
+                                    "$ref": "#/definitions/dto.Response"
                                 },
                                 {
                                     "type": "object",
@@ -2010,6 +2100,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreateDutySwapRequest": {
+            "type": "object",
+            "required": [
+                "targetDutyId"
+            ],
+            "properties": {
+                "targetDutyId": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.CreatePointReasonRequest": {
             "type": "object",
             "required": [
@@ -2094,9 +2195,6 @@ const docTemplate = `{
                 "assignee": {
                     "$ref": "#/definitions/dto.UserResponse"
                 },
-                "completed": {
-                    "type": "boolean"
-                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -2111,6 +2209,29 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.DutySwapRequestResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "requester": {
+                    "$ref": "#/definitions/dto.UserResponse"
+                },
+                "sourceDuty": {
+                    "$ref": "#/definitions/dto.DutyResponse"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "targetDuty": {
+                    "$ref": "#/definitions/dto.DutyResponse"
                 }
             }
         },
@@ -2309,17 +2430,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "studentNumber": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.SwapDutyRequest": {
-            "type": "object",
-            "required": [
-                "targetDutyId"
-            ],
-            "properties": {
-                "targetDutyId": {
                     "type": "string"
                 }
             }

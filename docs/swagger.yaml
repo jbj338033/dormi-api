@@ -60,6 +60,13 @@ definitions:
     - date
     - type
     type: object
+  dto.CreateDutySwapRequest:
+    properties:
+      targetDutyId:
+        type: string
+    required:
+    - targetDutyId
+    type: object
   dto.CreatePointReasonRequest:
     properties:
       name:
@@ -120,8 +127,6 @@ definitions:
     properties:
       assignee:
         $ref: '#/definitions/dto.UserResponse'
-      completed:
-        type: boolean
       createdAt:
         type: string
       date:
@@ -132,6 +137,21 @@ definitions:
         type: string
       type:
         type: string
+    type: object
+  dto.DutySwapRequestResponse:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      requester:
+        $ref: '#/definitions/dto.UserResponse'
+      sourceDuty:
+        $ref: '#/definitions/dto.DutyResponse'
+      status:
+        type: string
+      targetDuty:
+        $ref: '#/definitions/dto.DutyResponse'
     type: object
   dto.GenerateDutyRequest:
     properties:
@@ -264,13 +284,6 @@ definitions:
         type: string
       studentNumber:
         type: string
-    type: object
-  dto.SwapDutyRequest:
-    properties:
-      targetDutyId:
-        type: string
-    required:
-    - targetDutyId
     type: object
   dto.UpdateDutyRequest:
     properties:
@@ -490,16 +503,6 @@ paths:
         in: query
         name: endDate
         type: string
-      - default: 1
-        description: 페이지
-        in: query
-        name: page
-        type: integer
-      - default: 20
-        description: 페이지당 개수
-        in: query
-        name: limit
-        type: integer
       produces:
       - application/json
       responses:
@@ -507,7 +510,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/dto.PaginatedResponse'
+            - $ref: '#/definitions/dto.Response'
             - properties:
                 data:
                   items:
@@ -650,38 +653,13 @@ paths:
       summary: 당직 수정
       tags:
       - 당직
-  /duties/{id}/complete:
-    patch:
-      description: 당직을 완료 상태로 변경
-      parameters:
-      - description: 당직 ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.Response'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.Response'
-      security:
-      - BearerAuth: []
-      summary: 당직 완료 처리
-      tags:
-      - 당직
-  /duties/{id}/swap:
+  /duties/{id}/swap-requests:
     post:
       consumes:
       - application/json
-      description: 두 당직의 담당자 교대
+      description: 다른 사람의 당직과 교대 신청
       parameters:
-      - description: 당직 ID
+      - description: 내 당직 ID
         in: path
         name: id
         required: true
@@ -691,23 +669,28 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.SwapDutyRequest'
+          $ref: '#/definitions/dto.CreateDutySwapRequest'
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
-            $ref: '#/definitions/dto.Response'
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DutySwapRequestResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/dto.Response'
       security:
       - BearerAuth: []
-      summary: 당직 교대
+      summary: 당직 교대 신청
       tags:
-      - 당직
+      - 당직 교대
   /duties/generate:
     post:
       consumes:
@@ -743,6 +726,100 @@ paths:
       summary: 당직 자동 생성
       tags:
       - 당직
+  /duty-swap-requests/{id}/approve:
+    patch:
+      description: 받은 교대 신청 승인
+      parameters:
+      - description: 교대 신청 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 교대 신청 승인
+      tags:
+      - 당직 교대
+  /duty-swap-requests/{id}/reject:
+    patch:
+      description: 받은 교대 신청 거절
+      parameters:
+      - description: 교대 신청 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 교대 신청 거절
+      tags:
+      - 당직 교대
+  /duty-swap-requests/my:
+    get:
+      description: 내가 신청한 교대 목록 조회
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.DutySwapRequestResponse'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 내가 신청한 교대 목록
+      tags:
+      - 당직 교대
+  /duty-swap-requests/pending:
+    get:
+      description: 나에게 온 대기 중인 교대 신청 목록 조회
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.DutySwapRequestResponse'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 받은 교대 신청 목록
+      tags:
+      - 당직 교대
   /point-reasons:
     get:
       description: 모든 상벌점 사유 조회
@@ -913,16 +990,6 @@ paths:
         in: query
         name: endDate
         type: string
-      - default: 1
-        description: 페이지
-        in: query
-        name: page
-        type: integer
-      - default: 20
-        description: 페이지당 개수
-        in: query
-        name: limit
-        type: integer
       produces:
       - application/json
       responses:
@@ -930,7 +997,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/dto.PaginatedResponse'
+            - $ref: '#/definitions/dto.Response'
             - properties:
                 data:
                   items:
@@ -1135,16 +1202,6 @@ paths:
         in: query
         name: room
         type: string
-      - default: 1
-        description: 페이지
-        in: query
-        name: page
-        type: integer
-      - default: 20
-        description: 페이지당 개수
-        in: query
-        name: limit
-        type: integer
       produces:
       - application/json
       responses:
@@ -1152,7 +1209,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/dto.PaginatedResponse'
+            - $ref: '#/definitions/dto.Response'
             - properties:
                 data:
                   items:

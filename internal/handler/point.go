@@ -122,9 +122,7 @@ func (h *PointHandler) BulkGivePoints(c *gin.Context) {
 // @Param type query string false "유형 (REWARD, PENALTY)"
 // @Param startDate query string false "시작일 (YYYY-MM-DD)"
 // @Param endDate query string false "종료일 (YYYY-MM-DD)"
-// @Param page query int false "페이지" default(1)
-// @Param limit query int false "페이지당 개수" default(20)
-// @Success 200 {object} dto.PaginatedResponse{data=[]dto.PointResponse}
+// @Success 200 {object} dto.Response{data=[]dto.PointResponse}
 // @Failure 400 {object} dto.Response
 // @Router /points [get]
 func (h *PointHandler) GetAll(c *gin.Context) {
@@ -137,7 +135,7 @@ func (h *PointHandler) GetAll(c *gin.Context) {
 		return
 	}
 
-	points, total, err := h.pointService.GetAll(query)
+	points, err := h.pointService.GetAll(query)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.Response{
 			Success: false,
@@ -151,20 +149,9 @@ func (h *PointHandler) GetAll(c *gin.Context) {
 		responses = append(responses, toPointResponse(&p))
 	}
 
-	totalPages := int(total) / query.Limit
-	if int(total)%query.Limit > 0 {
-		totalPages++
-	}
-
-	c.JSON(http.StatusOK, dto.PaginatedResponse{
+	c.JSON(http.StatusOK, dto.Response{
 		Success: true,
 		Data:    responses,
-		Meta: &dto.Pagination{
-			Page:       query.Page,
-			Limit:      query.Limit,
-			Total:      total,
-			TotalPages: totalPages,
-		},
 	})
 }
 

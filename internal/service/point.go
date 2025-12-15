@@ -71,13 +71,7 @@ func (s *PointService) BulkGivePoints(req dto.BulkGivePointRequest, givenBy uuid
 	return points, nil
 }
 
-func (s *PointService) GetAll(query dto.PointQuery) ([]model.Point, int64, error) {
-	if query.Page < 1 {
-		query.Page = 1
-	}
-	if query.Limit < 1 || query.Limit > 100 {
-		query.Limit = 20
-	}
+func (s *PointService) GetAll(query dto.PointQuery) ([]model.Point, error) {
 	return s.pointRepo.FindAll(query)
 }
 

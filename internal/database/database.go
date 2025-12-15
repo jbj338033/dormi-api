@@ -34,6 +34,7 @@ func Migrate(db *gorm.DB) error {
 		&model.PointReason{},
 		&model.Point{},
 		&model.Duty{},
+		&model.DutySwapRequest{},
 		&model.AuditLog{},
 	)
 }

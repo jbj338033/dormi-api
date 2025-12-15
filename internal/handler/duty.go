@@ -12,12 +12,13 @@ import (
 )
 
 type DutyHandler struct {
-	dutyService  *service.DutyService
-	auditService *service.AuditService
+	dutyService     *service.DutyService
+	swapService     *service.DutySwapRequestService
+	auditService    *service.AuditService
 }
 
-func NewDutyHandler(dutyService *service.DutyService, auditService *service.AuditService) *DutyHandler {
-	return &DutyHandler{dutyService: dutyService, auditService: auditService}
+func NewDutyHandler(dutyService *service.DutyService, swapService *service.DutySwapRequestService, auditService *service.AuditService) *DutyHandler {
+	return &DutyHandler{dutyService: dutyService, swapService: swapService, auditService: auditService}
 }
 
 // Create godoc
@@ -105,9 +106,7 @@ func (h *DutyHandler) GetByID(c *gin.Context) {
 // @Param assigneeId query string false "담당자 ID"
 // @Param startDate query string false "시작일 (YYYY-MM-DD)"
 // @Param endDate query string false "종료일 (YYYY-MM-DD)"
-// @Param page query int false "페이지" default(1)
-// @Param limit query int false "페이지당 개수" default(20)
-// @Success 200 {object} dto.PaginatedResponse{data=[]dto.DutyResponse}
+// @Success 200 {object} dto.Response{data=[]dto.DutyResponse}
 // @Failure 400 {object} dto.Response
 // @Router /duties [get]
 func (h *DutyHandler) GetAll(c *gin.Context) {
@@ -120,7 +119,7 @@ func (h *DutyHandler) GetAll(c *gin.Context) {
 		return
 	}
 
-	duties, total, err := h.dutyService.GetAll(query)
+	duties, err := h.dutyService.GetAll(query)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.Response{
 			Success: false,
@@ -134,20 +133,9 @@ func (h *DutyHandler) GetAll(c *gin.Context) {
 		responses = append(responses, toDutyResponseWithRelations(&d))
 	}
 
-	totalPages := int(total) / query.Limit
-	if int(total)%query.Limit > 0 {
-		totalPages++
-	}
-
-	c.JSON(http.StatusOK, dto.PaginatedResponse{
+	c.JSON(http.StatusOK, dto.Response{
 		Success: true,
 		Data:    responses,
-		Meta: &dto.Pagination{
-			Page:       query.Page,
-			Limit:      query.Limit,
-			Total:      total,
-			TotalPages: totalPages,
-		},
 	})
 }
 
@@ -280,20 +268,20 @@ func (h *DutyHandler) Generate(c *gin.Context) {
 	})
 }
 
-// Swap godoc
-// @Summary 당직 교대
-// @Description 두 당직의 담당자 교대
-// @Tags 당직
+// CreateSwapRequest godoc
+// @Summary 당직 교대 신청
+// @Description 다른 사람의 당직과 교대 신청
+// @Tags 당직 교대
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "당직 ID"
-// @Param request body dto.SwapDutyRequest true "교대 대상 당직 ID"
-// @Success 200 {object} dto.Response
+// @Param id path string true "내 당직 ID"
+// @Param request body dto.CreateDutySwapRequest true "교대 대상 당직 ID"
+// @Success 201 {object} dto.Response{data=dto.DutySwapRequestResponse}
 // @Failure 400 {object} dto.Response
-// @Router /duties/{id}/swap [post]
-func (h *DutyHandler) Swap(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
+// @Router /duties/{id}/swap-requests [post]
+func (h *DutyHandler) CreateSwapRequest(c *gin.Context) {
+	sourceDutyID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.Response{
 			Success: false,
@@ -302,7 +290,7 @@ func (h *DutyHandler) Swap(c *gin.Context) {
 		return
 	}
 
-	var req dto.SwapDutyRequest
+	var req dto.CreateDutySwapRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Response{
 			Success: false,
@@ -311,7 +299,9 @@ func (h *DutyHandler) Swap(c *gin.Context) {
 		return
 	}
 
-	if err := h.dutyService.Swap(id, req.TargetDutyID); err != nil {
+	userID := c.MustGet("userID").(uuid.UUID)
+	swapReq, err := h.swapService.Create(userID, sourceDutyID, req.TargetDutyID)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.Response{
 			Success: false,
 			Error:   err.Error(),
@@ -319,37 +309,135 @@ func (h *DutyHandler) Swap(c *gin.Context) {
 		return
 	}
 
-	userID := c.MustGet("userID").(uuid.UUID)
-	h.auditService.Log(userID, model.AuditActionSwapDuty, "duty", &id, map[string]interface{}{
+	h.auditService.Log(userID, model.AuditActionRequestDutySwap, "duty_swap_request", &swapReq.ID, map[string]interface{}{
+		"sourceDutyId": sourceDutyID,
 		"targetDutyId": req.TargetDutyID,
 	}, c.ClientIP())
+
+	c.JSON(http.StatusCreated, dto.Response{
+		Success: true,
+		Data:    toSwapRequestResponse(swapReq),
+	})
+}
+
+// GetPendingSwapRequests godoc
+// @Summary 받은 교대 신청 목록
+// @Description 나에게 온 대기 중인 교대 신청 목록 조회
+// @Tags 당직 교대
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} dto.Response{data=[]dto.DutySwapRequestResponse}
+// @Router /duty-swap-requests/pending [get]
+func (h *DutyHandler) GetPendingSwapRequests(c *gin.Context) {
+	userID := c.MustGet("userID").(uuid.UUID)
+	requests, err := h.swapService.GetPendingForUser(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.Response{
+			Success: false,
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	responses := []dto.DutySwapRequestResponse{}
+	for _, r := range requests {
+		responses = append(responses, toSwapRequestResponse(&r))
+	}
+
+	c.JSON(http.StatusOK, dto.Response{
+		Success: true,
+		Data:    responses,
+	})
+}
+
+// GetMySwapRequests godoc
+// @Summary 내가 신청한 교대 목록
+// @Description 내가 신청한 교대 목록 조회
+// @Tags 당직 교대
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} dto.Response{data=[]dto.DutySwapRequestResponse}
+// @Router /duty-swap-requests/my [get]
+func (h *DutyHandler) GetMySwapRequests(c *gin.Context) {
+	userID := c.MustGet("userID").(uuid.UUID)
+	requests, err := h.swapService.GetMyRequests(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.Response{
+			Success: false,
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	responses := []dto.DutySwapRequestResponse{}
+	for _, r := range requests {
+		responses = append(responses, toSwapRequestResponse(&r))
+	}
+
+	c.JSON(http.StatusOK, dto.Response{
+		Success: true,
+		Data:    responses,
+	})
+}
+
+// ApproveSwapRequest godoc
+// @Summary 교대 신청 승인
+// @Description 받은 교대 신청 승인
+// @Tags 당직 교대
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "교대 신청 ID"
+// @Success 200 {object} dto.Response
+// @Failure 400 {object} dto.Response
+// @Router /duty-swap-requests/{id}/approve [patch]
+func (h *DutyHandler) ApproveSwapRequest(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Response{
+			Success: false,
+			Error:   "invalid swap request id",
+		})
+		return
+	}
+
+	userID := c.MustGet("userID").(uuid.UUID)
+	if err := h.swapService.Approve(id, userID); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Response{
+			Success: false,
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	h.auditService.Log(userID, model.AuditActionApproveDutySwap, "duty_swap_request", &id, nil, c.ClientIP())
 
 	c.JSON(http.StatusOK, dto.Response{
 		Success: true,
 	})
 }
 
-// Complete godoc
-// @Summary 당직 완료 처리
-// @Description 당직을 완료 상태로 변경
-// @Tags 당직
+// RejectSwapRequest godoc
+// @Summary 교대 신청 거절
+// @Description 받은 교대 신청 거절
+// @Tags 당직 교대
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "당직 ID"
+// @Param id path string true "교대 신청 ID"
 // @Success 200 {object} dto.Response
 // @Failure 400 {object} dto.Response
-// @Router /duties/{id}/complete [patch]
-func (h *DutyHandler) Complete(c *gin.Context) {
+// @Router /duty-swap-requests/{id}/reject [patch]
+func (h *DutyHandler) RejectSwapRequest(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.Response{
 			Success: false,
-			Error:   "invalid duty id",
+			Error:   "invalid swap request id",
 		})
 		return
 	}
 
-	if err := h.dutyService.Complete(id); err != nil {
+	userID := c.MustGet("userID").(uuid.UUID)
+	if err := h.swapService.Reject(id, userID); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Response{
 			Success: false,
 			Error:   err.Error(),
@@ -357,8 +445,7 @@ func (h *DutyHandler) Complete(c *gin.Context) {
 		return
 	}
 
-	userID := c.MustGet("userID").(uuid.UUID)
-	h.auditService.Log(userID, model.AuditActionCompleteDuty, "duty", &id, nil, c.ClientIP())
+	h.auditService.Log(userID, model.AuditActionRejectDutySwap, "duty_swap_request", &id, nil, c.ClientIP())
 
 	c.JSON(http.StatusOK, dto.Response{
 		Success: true,
@@ -371,7 +458,6 @@ func toDutyResponse(d *model.Duty) dto.DutyResponse {
 		Type:      string(d.Type),
 		Date:      d.Date.Format("2006-01-02"),
 		Floor:     d.Floor,
-		Completed: d.Completed,
 		CreatedAt: d.CreatedAt,
 	}
 }
@@ -386,6 +472,35 @@ func toDutyResponseWithRelations(d *model.Duty) dto.DutyResponse {
 			Name:  d.Assignee.Name,
 			Role:  string(d.Assignee.Role),
 		}
+	}
+
+	return resp
+}
+
+func toSwapRequestResponse(r *model.DutySwapRequest) dto.DutySwapRequestResponse {
+	resp := dto.DutySwapRequestResponse{
+		ID:        r.ID,
+		Status:    string(r.Status),
+		CreatedAt: r.CreatedAt,
+	}
+
+	if r.Requester != nil {
+		resp.Requester = &dto.UserResponse{
+			ID:    r.Requester.ID,
+			Email: r.Requester.Email,
+			Name:  r.Requester.Name,
+			Role:  string(r.Requester.Role),
+		}
+	}
+
+	if r.SourceDuty != nil {
+		dutyResp := toDutyResponseWithRelations(r.SourceDuty)
+		resp.SourceDuty = &dutyResp
+	}
+
+	if r.TargetDuty != nil {
+		dutyResp := toDutyResponseWithRelations(r.TargetDuty)
+		resp.TargetDuty = &dutyResp
 	}
 
 	return resp

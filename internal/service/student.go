@@ -48,13 +48,7 @@ func (s *StudentService) GetByID(id uuid.UUID) (*model.Student, error) {
 	return s.studentRepo.FindByID(id)
 }
 
-func (s *StudentService) GetAll(query dto.StudentQuery) ([]model.Student, int64, error) {
-	if query.Page < 1 {
-		query.Page = 1
-	}
-	if query.Limit < 1 || query.Limit > 100 {
-		query.Limit = 20
-	}
+func (s *StudentService) GetAll(query dto.StudentQuery) ([]model.Student, error) {
 	return s.studentRepo.FindAll(query)
 }
 
