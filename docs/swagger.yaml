@@ -1,0 +1,1500 @@
+basePath: /api
+definitions:
+  dto.AuditLogResponse:
+    properties:
+      action:
+        type: string
+      createdAt:
+        type: string
+      details: {}
+      entityId:
+        type: string
+      entityType:
+        type: string
+      id:
+        type: string
+      ipAddress:
+        type: string
+      user:
+        $ref: '#/definitions/dto.UserResponse'
+    type: object
+  dto.BulkGivePointRequest:
+    properties:
+      reasonId:
+        type: string
+      studentIds:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - reasonId
+    - studentIds
+    type: object
+  dto.ChangePasswordRequest:
+    properties:
+      currentPassword:
+        type: string
+      newPassword:
+        minLength: 6
+        type: string
+    required:
+    - currentPassword
+    - newPassword
+    type: object
+  dto.CreateDutyRequest:
+    properties:
+      assigneeId:
+        type: string
+      date:
+        type: string
+      floor:
+        type: integer
+      type:
+        enum:
+        - DORM
+        - NIGHT_STUDY
+        type: string
+    required:
+    - assigneeId
+    - date
+    - type
+    type: object
+  dto.CreatePointReasonRequest:
+    properties:
+      name:
+        type: string
+      score:
+        minimum: 1
+        type: integer
+      type:
+        enum:
+        - REWARD
+        - PENALTY
+        type: string
+    required:
+    - name
+    - score
+    - type
+    type: object
+  dto.CreateStudentRequest:
+    properties:
+      grade:
+        maximum: 3
+        minimum: 1
+        type: integer
+      name:
+        type: string
+      roomNumber:
+        type: string
+      studentNumber:
+        type: string
+    required:
+    - grade
+    - name
+    - roomNumber
+    - studentNumber
+    type: object
+  dto.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      role:
+        enum:
+        - ADMIN
+        - SUPERVISOR
+        - COUNCIL
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - role
+    type: object
+  dto.DutyResponse:
+    properties:
+      assignee:
+        $ref: '#/definitions/dto.UserResponse'
+      completed:
+        type: boolean
+      createdAt:
+        type: string
+      date:
+        type: string
+      floor:
+        type: integer
+      id:
+        type: string
+      type:
+        type: string
+    type: object
+  dto.GenerateDutyRequest:
+    properties:
+      assigneeIds:
+        items:
+          type: string
+        minItems: 1
+        type: array
+      endDate:
+        type: string
+      floor:
+        type: integer
+      startDate:
+        type: string
+      type:
+        enum:
+        - DORM
+        - NIGHT_STUDY
+        type: string
+    required:
+    - assigneeIds
+    - endDate
+    - startDate
+    - type
+    type: object
+  dto.GivePointRequest:
+    properties:
+      reasonId:
+        type: string
+      studentId:
+        type: string
+    required:
+    - reasonId
+    - studentId
+    type: object
+  dto.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.LoginResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/dto.UserResponse'
+    type: object
+  dto.PaginatedResponse:
+    properties:
+      data: {}
+      meta:
+        $ref: '#/definitions/dto.Pagination'
+      success:
+        type: boolean
+    type: object
+  dto.Pagination:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+  dto.PointReasonResponse:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      score:
+        type: integer
+      type:
+        type: string
+    type: object
+  dto.PointResponse:
+    properties:
+      cancelled:
+        type: boolean
+      cancelledAt:
+        type: string
+      givenAt:
+        type: string
+      givenBy:
+        $ref: '#/definitions/dto.UserResponse'
+      id:
+        type: string
+      reason:
+        $ref: '#/definitions/dto.PointReasonResponse'
+      student:
+        $ref: '#/definitions/dto.StudentResponse'
+    type: object
+  dto.PointSummary:
+    properties:
+      netScore:
+        type: integer
+      studentId:
+        type: string
+      totalPenalty:
+        type: integer
+      totalReward:
+        type: integer
+    type: object
+  dto.Response:
+    properties:
+      data: {}
+      error:
+        type: string
+      success:
+        type: boolean
+    type: object
+  dto.StudentResponse:
+    properties:
+      createdAt:
+        type: string
+      grade:
+        type: integer
+      id:
+        type: string
+      name:
+        type: string
+      roomNumber:
+        type: string
+      studentNumber:
+        type: string
+    type: object
+  dto.SwapDutyRequest:
+    properties:
+      targetDutyId:
+        type: string
+    required:
+    - targetDutyId
+    type: object
+  dto.UpdateDutyRequest:
+    properties:
+      assigneeId:
+        type: string
+      date:
+        type: string
+      floor:
+        type: integer
+      type:
+        enum:
+        - DORM
+        - NIGHT_STUDY
+        type: string
+    type: object
+  dto.UpdatePointReasonRequest:
+    properties:
+      name:
+        type: string
+      score:
+        minimum: 1
+        type: integer
+      type:
+        enum:
+        - REWARD
+        - PENALTY
+        type: string
+    type: object
+  dto.UpdateStudentRequest:
+    properties:
+      grade:
+        maximum: 3
+        minimum: 1
+        type: integer
+      name:
+        type: string
+      roomNumber:
+        type: string
+      studentNumber:
+        type: string
+    type: object
+  dto.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      role:
+        enum:
+        - ADMIN
+        - SUPERVISOR
+        - COUNCIL
+        type: string
+    type: object
+  dto.UserResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: 기숙사 관리 시스템 API - 학생 상벌점 관리 및 당직 일정 운영
+  title: Dormi API
+  version: "1.0"
+paths:
+  /audit-logs:
+    get:
+      description: 감사 로그 목록 조회 (관리자 전용)
+      parameters:
+      - description: 사용자 ID
+        in: query
+        name: userId
+        type: string
+      - description: 작업 유형
+        in: query
+        name: action
+        type: string
+      - description: 엔티티 유형
+        in: query
+        name: entityType
+        type: string
+      - description: 시작일 (RFC3339)
+        in: query
+        name: startDate
+        type: string
+      - description: 종료일 (RFC3339)
+        in: query
+        name: endDate
+        type: string
+      - default: 1
+        description: 페이지
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 페이지당 개수
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.AuditLogResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 감사 로그 조회
+      tags:
+      - 감사로그
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 이메일과 비밀번호로 로그인하여 JWT 토큰 발급
+      parameters:
+      - description: 로그인 정보
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.LoginResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.Response'
+      summary: 로그인
+      tags:
+      - 인증
+  /auth/password:
+    patch:
+      consumes:
+      - application/json
+      description: 본인 계정 비밀번호 변경
+      parameters:
+      - description: 비밀번호 변경 정보
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 비밀번호 변경
+      tags:
+      - 인증
+  /duties:
+    get:
+      description: 당직 목록 조회 (필터링 지원)
+      parameters:
+      - description: 유형 (DORM, NIGHT_STUDY)
+        in: query
+        name: type
+        type: string
+      - description: 담당자 ID
+        in: query
+        name: assigneeId
+        type: string
+      - description: 시작일 (YYYY-MM-DD)
+        in: query
+        name: startDate
+        type: string
+      - description: 종료일 (YYYY-MM-DD)
+        in: query
+        name: endDate
+        type: string
+      - default: 1
+        description: 페이지
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 페이지당 개수
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.DutyResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 당직 목록 조회
+      tags:
+      - 당직
+    post:
+      consumes:
+      - application/json
+      description: 새로운 당직 일정 생성
+      parameters:
+      - description: 당직 정보
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateDutyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DutyResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 당직 생성
+      tags:
+      - 당직
+  /duties/{id}:
+    delete:
+      description: 당직 정보 삭제
+      parameters:
+      - description: 당직 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 당직 삭제
+      tags:
+      - 당직
+    get:
+      description: ID로 당직 정보 조회
+      parameters:
+      - description: 당직 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DutyResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 당직 상세 조회
+      tags:
+      - 당직
+    put:
+      consumes:
+      - application/json
+      description: 당직 정보 수정
+      parameters:
+      - description: 당직 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 수정할 정보
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateDutyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DutyResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 당직 수정
+      tags:
+      - 당직
+  /duties/{id}/complete:
+    patch:
+      description: 당직을 완료 상태로 변경
+      parameters:
+      - description: 당직 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 당직 완료 처리
+      tags:
+      - 당직
+  /duties/{id}/swap:
+    post:
+      consumes:
+      - application/json
+      description: 두 당직의 담당자 교대
+      parameters:
+      - description: 당직 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 교대 대상 당직 ID
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SwapDutyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 당직 교대
+      tags:
+      - 당직
+  /duties/generate:
+    post:
+      consumes:
+      - application/json
+      description: 기간과 담당자 목록으로 당직 자동 생성
+      parameters:
+      - description: 자동 생성 정보
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GenerateDutyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.DutyResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 당직 자동 생성
+      tags:
+      - 당직
+  /point-reasons:
+    get:
+      description: 모든 상벌점 사유 조회
+      parameters:
+      - description: 유형 (REWARD, PENALTY)
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PointReasonResponse'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 상벌점 사유 목록
+      tags:
+      - 상벌점사유
+    post:
+      consumes:
+      - application/json
+      description: 새로운 상벌점 사유 등록
+      parameters:
+      - description: 사유 정보
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreatePointReasonRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PointReasonResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 상벌점 사유 생성
+      tags:
+      - 상벌점사유
+  /point-reasons/{id}:
+    delete:
+      description: 상벌점 사유 삭제
+      parameters:
+      - description: 사유 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 상벌점 사유 삭제
+      tags:
+      - 상벌점사유
+    get:
+      description: ID로 상벌점 사유 조회
+      parameters:
+      - description: 사유 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PointReasonResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 상벌점 사유 상세
+      tags:
+      - 상벌점사유
+    put:
+      consumes:
+      - application/json
+      description: 상벌점 사유 수정
+      parameters:
+      - description: 사유 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 수정할 정보
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePointReasonRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PointReasonResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 상벌점 사유 수정
+      tags:
+      - 상벌점사유
+  /points:
+    get:
+      description: 상벌점 목록 조회 (필터링 지원)
+      parameters:
+      - description: 학생 ID
+        in: query
+        name: studentId
+        type: string
+      - description: 유형 (REWARD, PENALTY)
+        in: query
+        name: type
+        type: string
+      - description: 시작일 (YYYY-MM-DD)
+        in: query
+        name: startDate
+        type: string
+      - description: 종료일 (YYYY-MM-DD)
+        in: query
+        name: endDate
+        type: string
+      - default: 1
+        description: 페이지
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 페이지당 개수
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PointResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 상벌점 목록 조회
+      tags:
+      - 상벌점
+    post:
+      consumes:
+      - application/json
+      description: 학생에게 상벌점 부여
+      parameters:
+      - description: 상벌점 정보
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GivePointRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PointResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 상벌점 부여
+      tags:
+      - 상벌점
+  /points/{id}/cancel:
+    patch:
+      description: 상벌점 취소 (soft delete)
+      parameters:
+      - description: 상벌점 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 상벌점 취소
+      tags:
+      - 상벌점
+  /points/bulk:
+    post:
+      consumes:
+      - application/json
+      description: 여러 학생에게 동시에 상벌점 부여
+      parameters:
+      - description: 다건 상벌점 정보
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.BulkGivePointRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PointResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 상벌점 다건 부여
+      tags:
+      - 상벌점
+  /points/reset:
+    delete:
+      description: 모든 상벌점 삭제 (관리자 전용)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 상벌점 전체 초기화
+      tags:
+      - 상벌점
+  /points/student/{studentId}:
+    get:
+      description: 특정 학생의 상벌점 목록 조회
+      parameters:
+      - description: 학생 ID
+        in: path
+        name: studentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PointResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 학생별 상벌점 조회
+      tags:
+      - 상벌점
+  /points/student/{studentId}/summary:
+    get:
+      description: 특정 학생의 상벌점 요약 정보 조회
+      parameters:
+      - description: 학생 ID
+        in: path
+        name: studentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PointSummary'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 학생별 상벌점 요약
+      tags:
+      - 상벌점
+  /students:
+    get:
+      description: 학생 목록 조회 (검색, 필터링 지원)
+      parameters:
+      - description: 검색어 (이름, 학번)
+        in: query
+        name: search
+        type: string
+      - description: 학년
+        in: query
+        name: grade
+        type: integer
+      - description: 방 번호
+        in: query
+        name: room
+        type: string
+      - default: 1
+        description: 페이지
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 페이지당 개수
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.StudentResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 학생 목록 조회
+      tags:
+      - 학생
+    post:
+      consumes:
+      - application/json
+      description: 새로운 학생 등록
+      parameters:
+      - description: 학생 정보
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateStudentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.StudentResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 학생 생성
+      tags:
+      - 학생
+  /students/{id}:
+    delete:
+      description: 학생 정보 삭제 (soft delete)
+      parameters:
+      - description: 학생 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 학생 삭제
+      tags:
+      - 학생
+    get:
+      description: ID로 학생 정보 조회
+      parameters:
+      - description: 학생 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.StudentResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 학생 상세 조회
+      tags:
+      - 학생
+    put:
+      consumes:
+      - application/json
+      description: 학생 정보 수정
+      parameters:
+      - description: 학생 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 수정할 정보
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateStudentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.StudentResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 학생 수정
+      tags:
+      - 학생
+  /students/import:
+    post:
+      consumes:
+      - multipart/form-data
+      description: CSV 파일로 학생 일괄 등록
+      parameters:
+      - description: CSV 파일
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: CSV 일괄 등록
+      tags:
+      - 학생
+  /users:
+    get:
+      description: 모든 사용자 목록 조회 (관리자 전용)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.UserResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 사용자 목록
+      tags:
+      - 사용자
+    post:
+      consumes:
+      - application/json
+      description: 새로운 사용자 계정 생성 (관리자 전용)
+      parameters:
+      - description: 사용자 정보
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 사용자 생성
+      tags:
+      - 사용자
+  /users/{id}:
+    delete:
+      description: 사용자 삭제 (관리자 전용)
+      parameters:
+      - description: 사용자 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 사용자 삭제
+      tags:
+      - 사용자
+    get:
+      description: ID로 사용자 정보 조회 (관리자 전용)
+      parameters:
+      - description: 사용자 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 사용자 상세
+      tags:
+      - 사용자
+    put:
+      consumes:
+      - application/json
+      description: 사용자 정보 수정 (관리자 전용)
+      parameters:
+      - description: 사용자 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 수정할 정보
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+      security:
+      - BearerAuth: []
+      summary: 사용자 수정
+      tags:
+      - 사용자
+securityDefinitions:
+  BearerAuth:
+    description: JWT 토큰 (Bearer {token})
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
